@@ -1,23 +1,12 @@
 import logo from './logo.svg';
+import Discount from './components/Discount/Discount.js';
+import './assets/bootstrap/bootstrap4.css';
 import './App.css';
 
 function App() {
   return (
-    <div className="App">
-      <header className="App-header">
-        <img src={logo} className="App-logo" alt="logo" />
-        <p>
-          Edit <code>src/App.js</code> and save to reload.
-        </p>
-        <a
-          className="App-link"
-          href="https://reactjs.org"
-          target="_blank"
-          rel="noopener noreferrer"
-        >
-          Learn React
-        </a>
-      </header>
+    <div className={['App', 'container-fluid', 'p-0'].join(' ')}>
+      <Discount/>
     </div>
   );
 }

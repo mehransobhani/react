@@ -1,38 +1,61 @@
-.App {
-  text-align: center;
+@font-face {
+  font-family: IranSansWeb;
+  src: url("./assets/fonts/IRANSansWeb.woff2") format('woff2');
 }
-
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+@font-face {
+  font-family: IranSansWebFaNum;
+  src: url("./assets/fonts/IRANSansWeb(FaNum).woff2") format('woff2');
 }
-
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+*{
+  font-family: IranSansWebFaNum;
+  box-sizing: border-box;
 }
-
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
+.pointer:hover{
+  cursor: pointer;
+}
+.rtl{
+  direction: rtl;
+}
+.ltr{
+  direction: ltr;
+}
+.btn:focus {
+  outline: none;
+  box-shadow: none;
+}
+.MuiAutocomplete-popper{
+  direction: rtl !important;
+}
+.MuiPaginationItem-root{
+  font-family: IranSansWebFaNum !important;
+}
+#controllable-states-demo{
+  font-family: IranSansWebFaNum !important;
+}
+.activeTopMenuButton{
+  background-color: #00BAC6;
   color: white;
+  border-radius: 2px;
+  cursor: pointer;
+  border: none;
+  outline-style: none;
+  font-size: 14px;
 }
-
-.App-link {
-  color: #61dafb;
+.deactiveTopMenuButton{
+  background: #F2F2F2;
+  color: #2B2B2B;
+  border-radius: 2px;
+  cursor: pointer;
+  border: none;
+  outline-style: none;
+  font-size: 14px;
 }
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.sc-kpOJdX label{
+  display: none;
+}
+.nYegl label{
+  display: none;
+}
+.font14{
+  font-size: 14px;
 }
