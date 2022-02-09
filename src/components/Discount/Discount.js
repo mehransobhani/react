@@ -1,7 +1,7 @@
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import Drawer from '@material-ui/core/Drawer';
 import './Discount.css';
-import RightMenu from '../RightMenu.js';
+import RightMenu from '../Header/RightMenu.js';
 import Header from '../Header/Header.js';
 import addCircleActiveImage from '../../assets/images/add_circle_active.png';
 import addCircleInactiveImage from '../../assets/images/add_circle_inactive.png';
@@ -14,13 +14,14 @@ import ListDiscount from './ListDiscount/ListDiscount.js';
 import AddDiscount from './AddDiscount/AddDiscount.js';
 import ReportDiscount from './ReportDiscount/ReportDiscount';
 import { IconButton } from '@material-ui/core';
+import { useCookies } from 'react-cookie';
 
 const Discount = () => {
   const [state, setState] = React.useState({right: false});
   const [listState, setListImage] = React.useState(listCircleActiveImage);
   const [addState, setAddImage] = React.useState(addCircleInactiveImage);
   const [selectedMenuItemIndex, setSelectedMenuItemIndex] = useState(0);
-
+  const [cookies, setCookie, removeCookie] = useCookies();
   const topMenuItems = [
     {id: 0, name: 'نمایش همه',  component: <ListDiscount />},
     {id: 1, name: 'افزودن', component: <AddDiscount />}, 
@@ -28,12 +29,12 @@ const Discount = () => {
     {id: 3, name: 'دریافت خروجی', component: null}
   ]
 
-  const toggleDrawer = (anchor, open) => (event) => {
+  /*const toggleDrawer = (anchor, open) => (event) => {
     if (event.type === 'keydown' && (event.key === 'Tab' || event.key === 'Shift')) {
       return;
     }
     setState({ ...state, [anchor]: open });
-  };
+  };*/
 
   const listImageClicked = () => {
     setListImage(listCircleActiveImage);
@@ -68,12 +69,15 @@ const Discount = () => {
     setSelectedMenuItemIndex(i);
   }
 
+  useEffect(() => {
+    if(cookies.user_server_token === undefined){
+      window.location.href = 'https://honari.com';
+    }
+  }, []);
+
   return (
     <div>
-        <Header title="مدیریت تخفیف‌ها" menuItemClicked = {toggleDrawer('right', true)}/>
-        <Drawer anchor="right" open={state['right']} onClose={toggleDrawer('right', false)}>
-          <RightMenu />
-        </Drawer>
+        <Header title="مدیریت تخفیف‌ها" />
         <div className={['container-fluid'].join(' ')}>
           <div className={['row', 'd-flex', 'mt-2',].join(' ')} style={{direction: 'rtl'}}>
               <img src={listState} className={['tab', 'd-none'].join(' ')} style={{width: '40px'}} onClick={listImageClicked}/>

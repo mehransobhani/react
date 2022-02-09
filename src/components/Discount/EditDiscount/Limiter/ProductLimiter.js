@@ -7,6 +7,7 @@ import BoxBlackImage from '../../../../assets/images/box_black.png';
 import axios from 'axios';
 import { findDOMNode } from 'react-dom';
 import * as Constants from '../../../../constants/urls';
+import { useCookies } from 'react-cookie';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -24,6 +25,8 @@ const ProductLimiter = (props) => {
     const [alertSeverity, setAlertSeverity] = useState('success');
     const [alertMessage, setAlertMessage] = useState('');
 
+    const [cookies, setCookie, removeCookie] = useCookies();
+
     const vertical = 'bottom';
     const horizontal = 'left';
 
@@ -39,6 +42,10 @@ const ProductLimiter = (props) => {
                 discountId : props.discountId,
                 dependencyId: selectedProduct,
                 dependencyType: 'product'
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + cookies.user_server_token,
+                }
             }).then((response) => {
                 console.log(response.data);
                 if(response.data.status === 'done'){
@@ -47,14 +54,18 @@ const ProductLimiter = (props) => {
                     setSelectedProducts(productsArray);
                     setAlertSeverity('success');
                     setAlertMessage('عملیات با موفقیت انجام شد');
-                }else{
-                    setAlertSeverity('warning');
-                    if(response.data.message === 'dependency not found'){
-                        setAlertMessage('چنین کالایی یافت نشد');
-                    }else if(response.data.message === 'dependency exists'){
-                        setAlertMessage('این کالا در لیست وجود دارد');
+                }else if(response.data.status === 'failed'){
+                    if(response.data.source === 'm'){
+                        window.location.href= 'https://honari.com';
+                    }else{
+                        setAlertSeverity('warning');
+                        if(response.data.message === 'dependency not found'){
+                            setAlertMessage('چنین کالایی یافت نشد');
+                        }else if(response.data.message === 'dependency exists'){
+                            setAlertMessage('این کالا در لیست وجود دارد');
+                        }
+                        console.log(response.data.umessage);
                     }
-                    console.log(response.data.message);
                 }
                 setAlertOpen(true);
                 setBtnTitle('افزودن');
@@ -78,10 +89,21 @@ const ProductLimiter = (props) => {
         axios.post(Constants.apiUrl + '/api/discount-relevant-dependencies',{
             discountId: props.discountId,
             dependencyType: 'product'
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((response) => {
                 console.log(response.data);
                 if(response.data.status === 'done'){
                     setSelectedProducts(response.data.products);
+                }else if(response.data.status === 'failed'){
+                    if(response.data.source === 'm'){
+                        window.location.href = 'https://honari.com'
+                    }else{
+                        console.warn(response.data.message);
+                        alert(response.data.umessage);
+                    }
                 }
             }).catch((error) => {
                 console.log(error);
@@ -95,9 +117,20 @@ const ProductLimiter = (props) => {
         axios.post(Constants.apiUrl + '/api/search-discount-relevant-dependencies',{
             discountId: props.discountId,
             dependencyType: 'product'
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((response) => {
                 if(response.data.status === 'done'){
                     setproducts(response.data.products);
+                }else if(response.data.status === 'failed'){
+                    if(response.data.source = 'm'){
+                        window.location.href = 'https://honari.com';
+                    }else{
+                        console.warn(response.data.message);
+                        alert(response.data.umessage);
+                    }
                 }
             }).catch((error) => {
                 console.log(error);
@@ -110,6 +143,10 @@ const ProductLimiter = (props) => {
     const deleteBtnClicked = (id) => {
         axios.post(Constants.apiUrl + '/api/remove-dependency-from-discount',{
                 dependencyId : id
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + cookies.user_server_token,
+                }
             }).then((response) => {
                 if(response.data.status === 'done'){
                     let productsArray = [];
@@ -119,11 +156,15 @@ const ProductLimiter = (props) => {
                         }
                     }
                     setSelectedProducts(productsArray);
-                }else{
-                    setAlertSeverity('warning');
-                    setAlertMessage('مشکلی پیش آمده');
-                    setAlertOpen(true);
-                    console.log(response.data.message);
+                }else if(response.data.status === 'failed'){
+                    if(response.data.source === 'm'){
+                        window.location.href = 'https://honari.com'
+                    } else{
+                        setAlertSeverity('warning');
+                        setAlertMessage('مشکلی پیش آمده');
+                        setAlertOpen(true);
+                        console.log(response.data.message);
+                    }
                 }
             }).catch((error) => {
                 console.log(error);
@@ -137,9 +178,20 @@ const ProductLimiter = (props) => {
         axios.post(Constants.apiUrl + '/api/search-discount-relevant-dependencies',{
             key: input,
             dependencyType: 'product'
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token, 
+            }
         }).then((response) => {
                 if(response.data.status === 'done'){
                     setproducts(response.data.products);
+                }else if(response.data.status === 'failed'){
+                    if(response.data.source === 'm'){
+                        window.location.href = 'https://honari.com';
+                    }else{
+                        console.warn(response.data.message);
+                        alert(response.data.umessage);
+                    }
                 }
             }).catch((error) => {
                 console.log(error);

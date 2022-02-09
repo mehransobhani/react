@@ -1,11 +1,11 @@
 import React from 'react';
-import HonariLogoIcon from '../assets/images/honari_logo.png';
-import HomeBlackIcon from '../assets/images/home_black.png';
-import BoxBlckIcon from '../assets/images/box_black.png';
-import DiscountBlackIcon from '../assets/images/discount_black.png';
-import BikeBlackIcon from '../assets/images/motorbike_black.png';
-import UserBlackIcon from '../assets/images/user_black.png';
-import coinsBlackIcon from '../assets/images/coins_black.png';
+import HonariLogoIcon from '../../assets/images/honari_logo.png';
+import HomeBlackIcon from '../../assets/images/home_black.png';
+import BoxBlckIcon from '../../assets/images/box_black.png';
+import DiscountBlackIcon from '../../assets/images/discount_black.png';
+import BikeBlackIcon from '../../assets/images/motorbike_black.png';
+import UserBlackIcon from '../../assets/images/user_black.png';
+import coinsBlackIcon from '../../assets/images/coins_black.png';
 import './RightMenu.css';
 
 const RightMenu = () => {
@@ -22,7 +22,11 @@ const RightMenu = () => {
             </div>
             <div className={['row', 'd-flex', 'text-right', 'align-items-center', 'pt-2', 'pb-2', 'item'].join(' ')} style={{direction: 'rtl'}}>
                 <img src={DiscountBlackIcon} style={{width: '24px', marginRight: '5px', marginLeft: '5px'}} />
-                <h6 className={['m-0', 'p-0'].join(' ')}>تخفیف‌ها</h6>
+                <a href='/discount'><h6 className={['m-0', 'p-0'].join(' ')}>تخفیف‌ها</h6></a>
+            </div>
+            <div className={['row', 'd-flex', 'text-right', 'align-items-center', 'pt-2', 'pb-2', 'item'].join(' ')} style={{direction: 'rtl'}}>
+                <img src={BoxBlckIcon} style={{width: '24px', marginRight: '5px', marginLeft: '5px'}} />
+                <a href='/category/course'><h6 className={['m-0', 'p-0'].join(' ')}>لینک دسته‌بندی‌ها</h6></a>
             </div>
             <div className={['row', 'd-flex', 'text-right', 'align-items-center', 'pt-2', 'pb-2', 'item'].join(' ')} style={{direction: 'rtl'}}>
                 <img src={UserBlackIcon} style={{width: '24px', marginRight: '5px', marginLeft: '5px'}} />
