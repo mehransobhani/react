@@ -46,7 +46,7 @@ const AddLink = () => {
     }, []);
 
     const confirmButtonClicked = () => {
-        if(selectedArtId == 0 || selectedFirstCourseId == 0 || selectedSecondCourseId == 0){
+        if(selectedArtId == 0 || selectedFirstCourseId == 0 || selectedFirstCourseId === -1 || selectedSecondCourseId == 0 || selectedSecondCourseId == -1){
             alert('لطفا موارد خواسته‌شده را به درستی وارد کنید');
             return;
         }

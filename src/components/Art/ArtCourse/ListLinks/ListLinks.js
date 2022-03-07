@@ -116,6 +116,11 @@ const ListLinks = () => {
             alert('لطفا یک آموزش را انتخاب کنید');
             return;
         }
+        if(axiosProcessing){
+            alert('کمی صبر کنید');
+            return;
+        }
+        console.warn(selectedCourses);
         setAxiosProcessing(true);
         axios.post(ConstantUrls.apiUrl + '/api/art/add-course-to-art', {
             courseId: selectedCourseIdToAdd,
@@ -127,9 +132,13 @@ const ListLinks = () => {
         }).then((r) => {
             let response = r.data;
             if(response.status === 'done'){
-                let newSelectedCourses = selectedCourses;
+                let newSelectedCourses = [];
+                //newSelectedCourses.push(response.courseId);
+                //console.info(newSelectedCourses);
+                selectedCourses.map((item, i) => {
+                    newSelectedCourses.push(item);
+                });
                 newSelectedCourses.push(parseInt(response.courseId));
-                console.info(newSelectedCourses);
                 setSelectedCourses(newSelectedCourses);
             }else if(response.status === 'failed'){
                 if(response.source === 'm'){
@@ -150,13 +159,38 @@ const ListLinks = () => {
         setSelectedCourseIdToAdd(event.target.value);
     }
 
-    const removeLinkButtonClicked = () => {
-        setAxiosProcessing(!axiosProcessing);
+    const removeLinkButtonClicked = (index) => {
+        axios.post(ConstantUrls.apiUrl + '/api/art/remove-course-link', {
+            artId: links[index].artId,
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
+        }).then((r) => {
+            let response = r.data;
+            if(response.status === 'done'){
+                let newLinks = [];
+                links.map((l, i) => {
+                    if(i !== index){
+                        newLinks.push(l);
+                    }
+                });
+                setLinks(newLinks);
+                setEditingLinkIndex(-1);
+            }else if(response.status === 'failed'){
+                console.warn(response.message);
+                alert(response.umessage);
+            }
+        }).catch((e) => {
+            console.error(e);
+            alert('خطا در برقراری ارتباط');
+        });
     }
 
     const removeCourseButtonClicked = (courseId) => {
-        axios.post(ConstantUrls.apiUrl + '/api/art/remove-course', {
-            artId: editingLinkIndex
+        axios.post(ConstantUrls.apiUrl + '/api/art/remove-course-from-art', {
+            artId: links[editingLinkIndex].artId,
+            courseId: courseId          
         }, {
             headers: {
                 'Authorization': 'Bearer ' + cookies.user_server_token,
@@ -164,7 +198,13 @@ const ListLinks = () => {
         }).then((r) => {
             let response = r.data;
             if(response.status === 'done'){ 
-                // remote the course from the list
+                let newSelectedCourses = [];
+                selectedCourses.map((item ,i) => {
+                    if(item != courseId){
+                        newSelectedCourses.push(item);
+                    }
+                });
+                setSelectedCourses(newSelectedCourses);
             }else if(response.status === 'failed'){
                 if(response.source === 'm'){
                     window.location.href = 'https://honari.com';
@@ -200,6 +240,7 @@ const ListLinks = () => {
                     </div>
                     {
                         selectedCourses.map((courseId, i) => {
+                            console.warn(courseId);
                             return(
                                 <div key={i} className={['col-12', 'd-flex', 'flex-row', 'align-items-center', 'p-2', 'rtl'].join(' ')} style={{background: '#F2F2F2', borderRadius: '2px'}}>
                                     <h6 className={['mb-0', 'text-right'].join(' ')} style={{fontSize: '14px', flex: '10'}}>{getCourseName(courseId)}</h6>
@@ -230,7 +271,7 @@ const ListLinks = () => {
                                     <h5 className={['text-right', 'font14', 'mb-0'].join(' ')} style={{width: '5rem'}}>{i+1}</h5>
                                     <h5 className={['text-right', 'font14', 'mb-0'].join(' ')} style={{flex: '1'}}>{l.artName}</h5>
                                     <button disabled={axiosProcessing} onClick={() => {showLinkInformation(i)}} className={['text-center', 'font14', 'mb-0', 'btn', 'btn-warning', 'ml-2'].join(' ')} style={{width: '5rem'}}>ویرایش</button>
-                                    <button onClick={removeLinkButtonClicked} className={['text-center', 'font14', 'mb-0', 'btn', 'btn-danger'].join(' ')} style={{width: '5rem'}}>حذف لینک</button>
+                                    <button onClick={() => {removeLinkButtonClicked(i)}} className={['text-center', 'font14', 'mb-0', 'btn', 'btn-danger'].join(' ')} style={{width: '5rem'}}>حذف لینک</button>
                                 </div>
                                 {
                                     i == editingLinkIndex ?

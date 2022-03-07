@@ -14,30 +14,49 @@ const AddSpecialDiscount = (props) => {
     const [filtersDisplayClass, setFiltersDisplayClass] = useState('d-none');
     const [startDateInputState, setStartDateInputState] = useState(new Date());
     const [endDateInputState, setEndDateInputState] = useState(new Date());
-    const [discountStartDateInputState, setDiscountStartDateInputState] = useState(new Date());
-    const [discountFinishDateInputState, setDiscountFinishDateInputState] = useState(new Date());
-    const [discountExpirationDateInputState, setDiscountExpirationDateInputState] = useState(new Date());
+    const [discountStartDateInputState, setDiscountStartDateInputState] = useState(new Date()); //
+    const [discountFinishDateInputState, setDiscountFinishDateInputState] = useState(new Date());   //
+    const [discountExpirationDateInputState, setDiscountExpirationDateInputState] = useState(new Date());   //
     const [productsInformation, setProductsInformation] = useState([]);
     const [categoryId, setCategoryId] = useState(-1);
     const [focusedProductIndex, setFocusedProductIndex] = useState(-1);
     const [productsDiscountInformation, setProductsDiscountInformation] = useState([]);
     const [expirationDateIsChecked, setExpirationDateIsChecked] = useState(false);
     const [startAndFinishDateIsChecked, setStartAndFinishDateIsChecked] = useState(false);
-    const [discountStatus, setDiscountStatus] = useState(0);
-    const [discountTitle, setDiscountTitle] = useState('');
-    const [discountDescription, setDiscountDescription] = useState('');
+    const [discountStatus, setDiscountStatus] = useState(0);                  //
+    const [discountTitle, setDiscountTitle] = useState('');                   //
+    const [discountDescription, setDiscountDescription] = useState('');       //
     const [selectedProductsInformation, setSelectedProductsInformation] = useState([]);
     const [selectedSectionId, setSelectedSectionId] = useState(0);
     const [focusedProductIndexForEdit, setFocusedProductIndexForEdit] = useState(-1);
     const [manipulatedProductEditInformation, setManipulatedProductEditInformation] = useState([]);
+    const [priceBoundaryCheckboxChecked, setPriceBoundaryCheckboxChecked] = useState(false);
+    const [priceBoundaryMinPrice, setPriceBoundaryMinPrice] = useState('');
+    const [priceBoundaryMaxPrice, setPriceBoundaryMaxPrice] = useState('');
+    const [sleepCheckboxChecked, setSleepCheckboxChecked] = useState(false);
+    const [stockCheckboxChecked, setStockCheckboxChecked] = useState(false);
+    const [factorDateChecked, setFactorDateChecked] = useState(false);
+    const [discountInformation, setDiscountInformation] = useState(null);
+
+    const [minStock, setMinStock] = useState('');
+    const [maxStock, setMaxStock] = useState('');
+    const [minSleep, setMinSleep] = useState('');
+    const [maxSleep, setMaxSleep] = useState('');
+
     const [cookies, setCookie, removeCookie] = useCookies();
 
     useEffect(() => {
-        axios.get(constantUrls.apiUrl + '/api/active-categories').then((r) => {
+        axios.post(constantUrls.apiUrl + '/api/active-categories', {
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
+        }).then((r) => {
             let response = r.data;
             if(response.status === 'done'){
                 setAllActiveCategoriesInformation(response.categories);
             }else{
+                alert('here is the error');
                 alert(response.umessage);
             }
         }).catch((e) => {
@@ -70,6 +89,45 @@ const AddSpecialDiscount = (props) => {
         }
     }, []);
 
+    useEffect(() => {
+        if(props.stage === 'secondEdit'){
+            axios.post(constantUrls.apiUrl + '/api/discount/multi-product-discount-information', {
+                discountId: discountId   
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + cookies.user_server_token,
+                }
+            }).then((r)=> {
+                let response = r.data;
+                if(response.status === 'done'){
+                    setDiscountInformation(response.information);
+                    setDiscountTitle(response.information.title);
+                        setDiscountDescription(response.information.description);
+                        setDiscountStatus(response.information.status);
+                        if(response.information.start_date != null){
+                            setDiscountStartDateInputState(new Date(response.information.start_date * 1000));
+                        }
+                        if(response.information.finish_date != null){
+                            setDiscountFinishDateInputState(new Date(response.information.finish_date * 1000));
+                        }
+                        if(response.information.expiration_date != null){
+                            setDiscountExpirationDateInputState(new Date(response.information.expiration_date * 1000))
+                            setExpirationDateIsChecked(true);
+                        }
+                        if(response.information.start_date != null && response.information.finish_date != null){
+                            setStartAndFinishDateIsChecked(true);
+                        }
+                }else if(response.status === 'failed'){
+                    console.warn(response.message);
+                    alert(response.umessage);
+                }
+            }).catch((e) => {
+                console.error(e);
+                alert('خطا در برقراری ارتباط');
+            })
+        }
+    }, []);
+
     const getSectionDisplayClass = (i) => {
         if(i === selectedSectionId){
             return 'activeTopMenuButton';
@@ -83,9 +141,44 @@ const AddSpecialDiscount = (props) => {
         if(obj.categoryId !== undefined){
             c = obj.categoryId;
         }
+
+        let minP = '';
+        let maxP = '';
+        let minSt = '';
+        let maxSt = '';
+        let minSl = '';
+        let maxSl = '';
+        let sd = '';
+        let ed = '';
+
+        if(priceBoundaryCheckboxChecked){
+            minP = priceBoundaryMinPrice;
+            maxP = priceBoundaryMaxPrice;
+        }
+        if(stockCheckboxChecked){
+            minSl = minStock;
+            maxSl = maxStock;
+        }
+        if(sleepCheckboxChecked){
+            minSl = minSleep;
+            maxSl = maxSleep;
+        }
+        if(factorDateChecked){
+            sd = Math.floor(startDateInputState / 1000);
+            ed = Math.floor(endDateInputState / 1000);
+        }
+
         axios.post(constantUrls.apiUrl + '/api/discount/no-paginated-filter-category-products', {
             discountId: discountId,
-            categoryId: c
+            categoryId: c,
+            minPrice: minP,
+            maxPrice: maxP,
+            minSleep: minSl,
+            maxSleep: maxSl,
+            minStock: minSt,
+            maxStock: maxSt,
+            minFactor: sd,
+            maxFactor: ed,
         }, {
             headers: {
                 'Authorization': 'Bearer ' + cookies.user_server_token,
@@ -95,7 +188,7 @@ const AddSpecialDiscount = (props) => {
             if(response.status === 'done'){
                 if(response.found === true){
                     setProductsInformation(response.products);
-                }else if(response.status === false){
+                }else if(response.found === false){
                     setProductsInformation([]);
                 }
                 let newProductsDiscountInformation = [];
@@ -121,7 +214,7 @@ const AddSpecialDiscount = (props) => {
     }
 
     const searchButtonClicked = () => {
-        alert('clicked');
+        getNewProducts({});
     }
 
     const productPercentInputChanged = (event) => {
@@ -202,6 +295,10 @@ const AddSpecialDiscount = (props) => {
             if(response.status === 'done'){
                 updateSelectedProductInformation('add', {products: newProductDiscountInformation});
                 setSelectedSectionId(2);
+                setStockCheckboxChecked(false);
+                setSleepCheckboxChecked(false);
+                setPriceBoundaryCheckboxChecked(false);
+                setFactorDateChecked(false);
             }else if(response.status === 'failed'){
                 alert(response.umessage);
             }
@@ -292,7 +389,7 @@ const AddSpecialDiscount = (props) => {
         }).then((r) => {
             let response = r.data;
             if(response.status === 'done'){
-                // TO BE WRITTEN;
+                alert('ویرایش با موفقیت انجام شد');
             }else if(response.status === 'failed'){
                 console.warn(response.message);
                 alert(response.umessage);
@@ -308,16 +405,16 @@ const AddSpecialDiscount = (props) => {
             <div className={['col-6', 'd-flex', 'flex-row', 'rtl', 'text-right', 'align-items-center'].join(' ')}>
                 <img src={leftArrowBlackImage} style={{width: '20px', height: '20px'}} />
                 <h6 className={['rtl', 'font14', 'mb-0', 'mx-2'].join(' ')} style={{}}>عنوان :</h6>
-                <input type='text' onChange={discountTitleInputChanged} className={['rtl', 'text-right', 'font14'].join(' ')} style={{flex: '1'}} />
+                <input type='text' defaultValue={discountTitle} onChange={discountTitleInputChanged} className={['rtl', 'text-right', 'font14'].join(' ')} style={{flex: '1'}} />
             </div>
             <div className={['col-6', 'd-flex', 'flex-row', 'rtl', 'text-right', 'align-items-center'].join(' ')}>
                 <img src={leftArrowBlackImage} style={{width: '20px', height: '20px'}} />
                 <h6 className={['rtl', 'font14', 'mb-0', 'mx-2'].join(' ')} style={{}}>توضیحات :</h6>
-                <input type='text' onChange={discountDescriptionInputChanged} className={['rtl', 'text-right', 'font14'].join(' ')} style={{flex: '1'}} />
+                <input type='text' defaultValue={discountDescription} onChange={discountDescriptionInputChanged} className={['rtl', 'text-right', 'font14'].join(' ')} style={{flex: '1'}} />
             </div>
             <div className={['col-6', 'd-flex', 'flex-row', 'align-items-center', 'mt-3', 'rtl'].join(' ')}>
                 <img src={leftArrowBlackImage} style={{width: '20px', height: '20px'}} />
-                <input type='checkbox' onChange={startAndFinishDateCheckboxChanged} className={['mr-2', 'pointer'].join(' ')} />
+                <input type='checkbox' checked={startAndFinishDateIsChecked} onChange={startAndFinishDateCheckboxChanged} className={['mr-2', 'pointer'].join(' ')} />
                 <h6 className={['mb-0', 'mx-2', 'mb-0', 'font14'].join(' ')}>تاریخ شروع و پایان</h6>
                 {
                     startAndFinishDateIsChecked
@@ -336,12 +433,12 @@ const AddSpecialDiscount = (props) => {
             </div>
             <div className={['col-6', 'd-flex', 'flex-row', 'align-items-center', 'mt-3', 'rtl'].join(' ')}>
                 <img src={leftArrowBlackImage} style={{width: '20px', height: '20px'}} />
-                <input type='checkbox' onChange={expirationDateCheckboxChanged} className={['mr-2', 'pointer'].join(' ')} />
+                <input type='checkbox' checked={expirationDateIsChecked} onChange={expirationDateCheckboxChanged} className={['mr-2', 'pointer'].join(' ')} />
                 <h6 className={['mb-0', 'mx-2', 'mb-0', 'font14'].join(' ')}>تاریخ انقضا :</h6>
                 {
                     expirationDateIsChecked
                     ?
-                        <DatePicker className={['font14'].join(' ')} style={{direction: 'rtl', flex: '1'}} value={discountExpirationDateInputState} onClickSubmitButton={value => {setDiscountExpirationDateInputState(value.value._d)}} />
+                        <DatePicker className={['font14'].join(' ')} style={{direction: 'rtl', flex: '1'}} value={discountInformation!=null ? discountInformation.expiration_date * 1000 : discountExpirationDateInputState} onClickSubmitButton={value => {setDiscountExpirationDateInputState(value.value._d)}} />
                     :
                     null
                 }
@@ -370,12 +467,53 @@ const AddSpecialDiscount = (props) => {
         }
     }
 
+    const priceBoundaryCheckboxChanged = (event) => {
+        setPriceBoundaryCheckboxChecked(event.target.checked);
+    }
+
+    const minPriceChanged = (event) => {
+        setPriceBoundaryMinPrice(event.target.value);
+    }
+
+    const maxPriceChanged = (event) => {
+        setPriceBoundaryMaxPrice(event.target.value);
+    }
+
+    const sleepCheckboxChanged = (event) => {
+        setSleepCheckboxChecked(event.target.checked);
+    }
+
+    const minSleepChanged = (event) => {    
+        setMinSleep(event.target.value);
+    }
+
+    const maxSleepChanged = (event) => {
+        setMaxSleep(event.target.value);    
+    }
+
+    const stockCheckboxChanged = (event) => {
+        setStockCheckboxChecked(event.target.checked);
+    }
+
+    const minStockChanged = (event) => {
+        setMinStock(event.target.value);
+    }
+
+    const maxStockChanged = (event) => {
+        setMaxStock(event.target.value);
+    }
+
+    const factorDateCheckboxChanged = (event) => {
+        setFactorDateChecked(event.target.checked);
+    }
+
     const addProductLayout = (
         <React.Fragment>
         <div className={['row', 'mt-3', 'rtl'].join(' ')}>
                 <div className={['col-12', 'px-2', 'd-flex', 'flex-row', 'align-items-center'].join(' ')}>
                     <h6 className={['text-center', 'mb-0', 'font14'].join(' ')}>دسته‌بندی موردنظر را انتخاب کنید</h6>
                     <select onChange={categorySelectorChanged} className={['mr-3', 'font14'].join(' ')} style={{flex: '1', maxHeight: '200px'}} >
+                        <option value={0}>انتخاب کنید</option>
                         {
                             allActiveCategoriesInformation.map((category, index) => {
                                 return (
@@ -388,24 +526,24 @@ const AddSpecialDiscount = (props) => {
                 <div className={['col-12', 'd-flex', 'flex-row', 'align-items-center', 'text-right', 'rtl', 'mt-2'].join(' ')}>
                     <button onClick={()=>{setFiltersDisplayClass('d-flex')}} className={[ filtersDisplayClass === 'd-none' ? '' : 'd-none', 'px-3', 'py-1', 'pointer', 'mt-0'].join(' ')} style={{fontSize: '14px', background: '#F2F2F2', borderRadius: '3px', border: 'none', outlineStyle: 'none'}}>جستجوی پیشرفته</button>
                     <div className={[filtersDisplayClass, 'flex-row', 'rtl', 'text-right', 'align-items-center'].join(' ')} style={{flex: '1'}}>
-                        <input type='checkbox' className={['mr-3', 'mt-0', 'pointer'].join(' ')} />
+                        <input type='checkbox' onChange={priceBoundaryCheckboxChanged} className={['mr-3', 'mt-0', 'pointer'].join(' ')} />
                         <h6 className={['mb-0', 'text-right', 'rtl', 'mr-1', 'pt-0', 'pl-1', 'font14'].join(' ')}>قیمت کالا</h6>
-                        <input type="number" className={['ltr', 'text-left', 'font14', 'mx-1'].join(' ')} placeholder="حداقل قیمت" style={{maxWidth: '140px'}} />
-                        <input type="number" className={['ltr', 'text-left', 'font14', 'mx-1'].join(' ')} placeholder="حداکثر قیمت" style={{maxWidth: '140px'}}/>
-                        <input type='checkbox' className={['mr-3', 'mt-0', 'pointer'].join(' ')} />
+                        <input type="number" onChange={minPriceChanged} className={['ltr', 'text-left', 'font14', 'mx-1', priceBoundaryCheckboxChecked ? '' : 'd-none'].join(' ')} placeholder="حداقل قیمت" style={{maxWidth: '140px'}} />
+                        <input type="number" onChange={maxPriceChanged} className={['ltr', 'text-left', 'font14', 'mx-1', priceBoundaryCheckboxChecked ? '' : 'd-none'].join(' ')} placeholder="حداکثر قیمت" style={{maxWidth: '140px'}}/>
+                        <input type='checkbox' onChange={sleepCheckboxChanged} className={['mr-3', 'mt-0', 'pointer'].join(' ')} />
                         <h6 className={['mb-0', 'text-right', 'rtl', 'mr-1', 'pt-0', 'pl-1', 'font14'].join(' ')}>خواب کالا</h6>
-                        <input type="number" className={['ltr', 'text-left', 'font14', 'mx-1'].join(' ')} placeholder="حداقل خواب" style={{maxWidth: '140px'}} />
-                        <input type="number" className={['ltr', 'text-left', 'font14'].join(' ')} placeholder="حداکثر خواب" style={{maxWidth: '140px'}}/>
-                        <input type='checkbox' className={['mr-3', 'mt-0', 'ml-1', 'pointer'].join(' ')} />
-                        <h6 className={['mb-0', 'text-right', 'rtl', 'mx-1', 'font14'].join(' ')}>موجودی کالا</h6>
-                        <input type="number" className={['ltr', 'text-left', 'font14', 'mx-1'].join(' ')} placeholder="حداقل موجودی" style={{maxWidth: '140px'}} />
-                        <intput type="number" className={['ltr', 'text-left', 'font14', 'mx-1'].join(' ')} placeholder="حداکثر موجودی" style={{maxWidth: '140px'}}/>
-                        <input type='checkbox' className={['mr-3', 'mt-0', 'pointer'].join(' ')} />
-                        <h6 className={['mr-3', 'mb-0', 'rtl', 'text-right', 'font14'].join(' ')}>تاریخ آخرین فاکتور</h6>
-                        <h6 className={['mb-0', 'text-right', 'rtl', 'mr-1', 'pt-0', 'pl-1', 'font14'].join(' ')}>از : </h6>
-                        <DatePicker className={['font14'].join(' ')} style={{direction: 'rtl'}} value={startDateInputState} onClickSubmitButton={value => {setStartDateInputState(value.value._d)}} />
-                        <h6 className={['mb-0', 'text-right', 'rtl', 'mr-1', 'pt-0', 'pl-1', 'font14'].join(' ')}>تا : </h6>
-                        <DatePicker className={['font14'].join(' ')} style={{direction: 'rtl'}} value={startDateInputState} onClickSubmitButton={value => {setStartDateInputState(value.value._d)}} />
+                        <input onChange={minSleepChanged} type="number" className={['ltr', 'text-left', 'font14', 'mx-1', sleepCheckboxChecked ? '' : 'd-none'].join(' ')} placeholder="حداقل خواب" style={{maxWidth: '100px'}} />
+                        <input onChange={maxSleepChanged} type="number" className={['ltr', 'text-left', 'font14' , sleepCheckboxChecked ? '' : 'd-none'].join(' ')} placeholder="حداکثر خواب" style={{maxWidth: '100px'}}/>
+                        <input type='checkbox' onChange={stockCheckboxChanged} className={['mr-3', 'mt-0', 'ml-1', 'pointer'].join(' ')} />
+                        <h6 className={['mb-0', 'text-right', 'rtl', 'ml-1', 'font14'].join(' ')}>موجودی کالا</h6>
+                        <input type="number" onChange={minStockChanged} className={['ltr', 'text-left', 'font14', 'mx-1', stockCheckboxChecked ? '' : 'd-none'].join(' ')} placeholder="حداقل موجودی" style={{maxWidth: '100px'}} />
+                        <input type="number" onChange={maxStockChanged} className={['ltr', 'text-left', 'font14', 'mx-1', stockCheckboxChecked ? '' : 'd-none'].join(' ')} placeholder="حداکثر موجودی" style={{maxWidth: '100px'}}/>
+                        <input type='checkbox' onChange={factorDateCheckboxChanged} className={['mr-3', 'mt-0', 'pointer'].join(' ')} />
+                        <h6 className={['mr-1', 'mb-0', 'rtl', 'text-right', 'font14'].join(' ')}>تاریخ آخرین فاکتور</h6>
+                        <h6 className={['mb-0', 'text-right', 'rtl', 'mr-1', 'pt-0', 'pl-1', 'font14', factorDateChecked ? '' : 'd-none'].join(' ')}>از : </h6>
+                        <DatePicker className={['font14', factorDateChecked ? '' : 'd-none'].join(' ')} style={{direction: 'rtl'}} value={startDateInputState} onClickSubmitButton={value => {setStartDateInputState(value.value._d)}} />
+                        <h6 className={['mb-0', 'text-right', 'rtl', 'mr-1', 'pt-0', 'pl-1', 'font14', factorDateChecked ? '' : 'd-none'].join(' ')}>تا : </h6>
+                        <DatePicker className={['font14', factorDateChecked ? '' : 'd-none'].join(' ')} style={{direction: 'rtl'}} value={startDateInputState} onClickSubmitButton={value => {setStartDateInputState(value.value._d)}} />
                         <button onClick={searchButtonClicked} className={['px-3', 'py-1', 'mt-0', 'mr-3', 'mb-0', 'pointer', 'font14'].join(' ')} style={{borderRadius: '3px', background: 'green', color: 'white', border: 'none', outlineStyle: 'none'}}>جستجو</button>
                     </div>
                 </div>
@@ -442,7 +580,7 @@ const AddSpecialDiscount = (props) => {
                 productsDiscountInformation.length !== 0
                 ?
                 <div className={['row'].join(' ')}>
-                    <div className={['col-12', 'd-flex', 'flex-row', 'justify-content-center'].join(' ')}>
+                    <div className={['col-12', 'd-flex', 'flex-row', 'justify-content-center', 'mb-2'].join(' ')}>
                         <button onClick={submitDiscountProducts} className={['px-4', 'py-2', 'font14', 'mt-2', 'pointer'].join(' ')} style={{background: '#008000', color: 'white', borderStyle: 'none', outlineStyle: 'none', borderRadius: '2px'}}>افزودن محصولات به تخفیف</button>
                     </div>
                 </div>
@@ -495,22 +633,34 @@ const AddSpecialDiscount = (props) => {
                     newProductInformation.push(info);
                 }
             });
-        setSelectedProductsInformation(newProductInformation);
+            setSelectedProductsInformation(newProductInformation);
         }else if(method === 'remove'){
             let newProductInformation = [];
-             selectedProductsInformation.map((info, index) => {
-                if(info.productId !== input.productId){
+            for(let i=0; i< selectedProductsInformation.length; i++){
+                if(selectedProductsInformation[i].productId != input.productId){
+                    newProductInformation.push(selectedProductsInformation[i]);
+                }
+            }
+            /*
+            selectedProductsInformation.map((info, index) => {
+                if(info.productId != input.productId){
                     newProductInformation.push(info);
                 }
             });
-        setSelectedProductsInformation(newProductInformation);
+            */
+            setSelectedProductsInformation(newProductInformation);
+            console.warn(newProductInformation);
         }else if(method === 'add'){
             let newProductInformation = [];
             let b = [];
+            let a = selectedProductsInformation;
+            //newProductInformation.map((i, c) => {
+            //    a.push(i);
+            //});
             input.products.map((p, c) => { 
                 productsInformation.map((info, index) => {
                     if(p.id === info.id){
-                        newProductInformation.push({
+                        a.push({
                             productId: info.id,
                             productName: info.productName,
                             productUrl: info.productUrl,
@@ -524,11 +674,9 @@ const AddSpecialDiscount = (props) => {
                     }
                 });
             })
-            let a = selectedProductsInformation;
-            newProductInformation.map((i, c) => {
-                a.push(i);
-            });
+            
             setSelectedProductsInformation(a);
+            console.warn(a);
             let newProductDiscountInformation = [];
             productsInformation.map((info, index) => {
                 let found = false;
@@ -652,9 +800,9 @@ const AddSpecialDiscount = (props) => {
                             <h6 className={['col-1', 'font14', 'text-center', 'mb-0'].join(' ')}>{productInformation.productStock}</h6>
                             <h6 className={['col-1', 'font14', 'text-right', 'mb-0'].join(' ')}>{productInformation.productSleep}</h6>
                             <h6 className={['col-1', 'font14', 'text-center', 'mb-0'].join(' ')}>{productInformation.productProfitMargin}</h6>
-                            <input type='number' defaultValue={productInformation.discountFinalStock} onFocus={()=>{setFocusedProductIndexForEdit(index)}} onChange={productFinalStockInputChangeForEdit} placeholder='موجودی' className={['col-1', 'font-14', 'text-center'].join(' ')} style={{borderStyle: 'none', borderRadius: '2px', outlineStyle: 'none'}} />
-                            <input type='number' defaultValue={productInformation.discountPercent} onFocus={()=>{setFocusedProductIndexForEdit(index)}} onChange={productPercentInputChangedForEdit} placeholder='درصد'  className={['col-1', 'font-14', 'text-center'].join(' ')} style={{borderStyle: 'none', borderRadius: '2px', outlineStyle: 'none'}} />
-                            <input type='number' defaultValue={productInformation.discountPrice} onFocus={()=>{setFocusedProductIndexForEdit(index)}} onChange={productPriceInputChangedForEdit} placeholder='قیمت'  className={['col-1', 'font-14', 'text-center'].join(' ')} style={{borderStyle: 'none', borderRadius: '2px', outlineStyle: 'none'}} />
+                            <input type='number' defaultValue='' placeholder={productInformation.discountFinalStock}  onFocus={()=>{setFocusedProductIndexForEdit(index)}} onChange={productFinalStockInputChangeForEdit}  className={['col-1', 'font-14', 'text-center'].join(' ')} style={{borderStyle: 'none', borderRadius: '2px', outlineStyle: 'none'}} />
+                            <input type='number' defaultValue='' placeholder={productInformation.discountPercent}  onFocus={()=>{setFocusedProductIndexForEdit(index)}} onChange={productPercentInputChangedForEdit}   className={['col-1', 'font-14', 'text-center'].join(' ')} style={{borderStyle: 'none', borderRadius: '2px', outlineStyle: 'none'}} />
+                            <input type='number' defaultValue='' placeholder={productInformation.discountPrice}  onFocus={()=>{setFocusedProductIndexForEdit(index)}} onChange={productPriceInputChangedForEdit}   className={['col-1', 'font-14', 'text-center'].join(' ')} style={{borderStyle: 'none', borderRadius: '2px', outlineStyle: 'none'}} />
                             <button onClick={()=>{productEditButtonClicked(index)}} className={['col-1', 'pointer'].join(' ')} style={{background: '#FFC107', color: 'black', borderStyle: 'none', outlineStyle: 'none', borderRadius: '2px'}}>ویرایش</button>
                             <button onClick={()=>{productRemoveButtonClicked(index)}} className={['col-1', 'pointer'].join(' ')} style={{background: '#DC3545', color: 'white', borderStyle: 'none', outlineStyle: 'none', borderRadius: '2px'}}>حذف</button>
                         </div>
@@ -677,9 +825,9 @@ const AddSpecialDiscount = (props) => {
             {
                 getSectionLayout()
             }
-            <div className={['row', 'w-100', 'px-2'].join(' ')} style={{position: 'absolute', bottom: '0.25rem', left: '0.25rem'}}>
+            <div className={['row', 'px-2'].join(' ')} style={{position: 'sticky', bottom: '0.5rem'}}>
             {
-                typeof props.close === 'function' ? <button className={['btn', 'btn-danger', 'col-12', 'mt-2'].join(' ')} onClick={props.close}>خروج</button> : null
+                typeof props.close === 'function' ? <button className={['btn', 'btn-danger', 'col-12', 'mt-2', 'mx-0'].join(' ')} onClick={props.close}>خروج</button> : null
             }
             </div>
         </div>
