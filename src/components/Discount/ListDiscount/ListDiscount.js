@@ -13,6 +13,8 @@ import * as Constants from '../../../constants/urls';
 import { DatePicker } from "jalali-react-datepicker";
 import Pagination from '@material-ui/lab/Pagination';
 import { useCookies } from 'react-cookie';
+import * as actionTypes from '../../../store/actions';
+import {connect} from 'react-redux';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -22,7 +24,7 @@ function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
 }
 
-function ListDiscount() {
+function ListDiscount(props) {
 
     const [open, setModalOpen] = React.useState(false);
     const [discounts, setDiscounts] = useState([]);
@@ -100,6 +102,7 @@ function ListDiscount() {
     }, []);*/
 
     useEffect(() => {
+        props.reduxStartLoading();
         axios.post(Constants.apiUrl + '/api/discount/filtered-paginated-discounts', {
             page: 1,
             type: 'all',
@@ -126,6 +129,8 @@ function ListDiscount() {
             }
         }).catch((error) => {
             console.error(error);
+        }).finally(() => {
+            props.reduxStopLoading();
         });
     }, []);
 
@@ -142,6 +147,7 @@ function ListDiscount() {
         if(obj.page !== undefined){
             page = obj.page;
         }
+        props.reduxStartLoading();
         axios.post(Constants.apiUrl + '/api/discount/filtered-paginated-discounts', {
             page: page,
             type: discountTypeFilter,
@@ -169,6 +175,8 @@ function ListDiscount() {
         }).catch((e) => {
             console.error(e);
             alert('خطا در برقراری ارتباط');
+        }).finally(() => {
+            props.reduxStopLoading()
         });
     }
 
@@ -308,4 +316,17 @@ function ListDiscount() {
     );
 }
 
-export default ListDiscount;
+const mapStateToProps = (state) => {
+    return {
+        reduxLoading: state.loading,
+    };
+}
+
+const mapDispatchToProps = (dispatch) => {
+    return{
+        reduxStartLoading: () => dispatch({type: actionTypes.START_LOADING}),
+        reduxStopLoading: () => dispatch({type: actionTypes.STOP_LOADING}),
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ListDiscount);
