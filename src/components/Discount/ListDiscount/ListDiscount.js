@@ -2,6 +2,7 @@ import React, { useState, useEffect } from 'react';
 import Dialog from '@material-ui/core/Dialog';
 import Slide from '@material-ui/core/Slide';
 import EditDiscount from '../EditDiscount/DiscountEdit';
+import EditMultiDiscount from '../EditMultiDiscount/EditMultiDiscount';
 import settingsImage from '../../../assets/images/settings_yellow.png';
 import powerOffImage from '../../../assets/images/power_off_circle.png';
 import powerOnImage from '../../../assets/images/power_on_circle.png';
@@ -11,6 +12,9 @@ import axios from 'axios';
 import * as Constants from '../../../constants/urls';
 import { DatePicker } from "jalali-react-datepicker";
 import Pagination from '@material-ui/lab/Pagination';
+import { useCookies } from 'react-cookie';
+import * as actionTypes from '../../../store/actions';
+import {connect} from 'react-redux';
 
 const Transition = React.forwardRef(function Transition(props, ref) {
   return <Slide direction="up" ref={ref} {...props} />;
@@ -20,7 +24,7 @@ function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
 }
 
-function ListDiscount() {
+function ListDiscount(props) {
 
     const [open, setModalOpen] = React.useState(false);
     const [discounts, setDiscounts] = useState([]);
@@ -39,16 +43,18 @@ function ListDiscount() {
     const [useFinishDateFilter, setUseFinishDateFilter] = useState(false);
     const [activeDiscountsStatus, setActiveDiscountsStatus] = useState(0);
     const [discountTypeFilter, setDiscountTypeFilter] = useState('all');
+    const [cookies, setCookie, removeCookie] = useCookies();
 
     const vertical = 'bottom';
     const horizontal = 'left';
     const discountTypes = [
-        {type: 'all',       name: 'تمام تخفیف‌ها'},
-        {type: 'product',   name: 'تخفیفات مخصوص محصول'}, 
-        {type: 'category',  name: 'تخفیفات مخصوص دسته‌بندی'}, 
-        {type: 'order',     name: 'تخفیفات مخصوص سفارش'}, 
-        {type: 'shipping',  name: 'تخفیفات مخصوص ارسال'}, 
-        {type: 'code',      name: 'تخفیفات با کدتخفیف'}
+        {type: 'all',               name: 'همه موارد'},
+        {type: 'product',           name: 'محصول'}, 
+        {type: 'category',          name: 'دسته بندی'}, 
+        {type: 'order',             name: 'سفارش'}, 
+        {type: 'shipping',          name: 'حمل و نقل'}, 
+        {type: 'multi-product',     name: 'محصول - ویژه'},
+        {type: 'code',              name: 'دارای کد تخفیف'}
     ];
 
     useEffect(() => {
@@ -96,12 +102,17 @@ function ListDiscount() {
     }, []);*/
 
     useEffect(() => {
-        axios.post(Constants.apiUrl + '/api/filtered-paginated-discounts', {
+        props.reduxStartLoading();
+        axios.post(Constants.apiUrl + '/api/discount/filtered-paginated-discounts', {
             page: 1,
             type: 'all',
             startDate: 0,
             finishDate: 0,
             active: 0,
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((res) => {
             let response = res.data;
             if(response.status === 'done'){
@@ -118,6 +129,8 @@ function ListDiscount() {
             }
         }).catch((error) => {
             console.error(error);
+        }).finally(() => {
+            props.reduxStopLoading();
         });
     }, []);
 
@@ -134,12 +147,17 @@ function ListDiscount() {
         if(obj.page !== undefined){
             page = obj.page;
         }
-        axios.post(Constants.apiUrl + '/api/filtered-paginated-discounts', {
+        props.reduxStartLoading();
+        axios.post(Constants.apiUrl + '/api/discount/filtered-paginated-discounts', {
             page: page,
             type: discountTypeFilter,
             startDate: startDate,
             finishDate: finishDate,
             active: activeDiscountsStatus,
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((res) => {
             let response = res.data;
             if(response.status === 'done'){
@@ -157,12 +175,18 @@ function ListDiscount() {
         }).catch((e) => {
             console.error(e);
             alert('خطا در برقراری ارتباط');
+        }).finally(() => {
+            props.reduxStopLoading()
         });
     }
 
     const toggleDiscount = (discount) => {
         axios.post(Constants.apiUrl + '/api/toggle-discount', {
             discountId: discount.discountId
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((response) => {
             if(response.data.status === 'done'){
                 let discountsArray = [];
@@ -262,8 +286,8 @@ function ListDiscount() {
                         <div className={['row', 'rounded', 'align-items-center', 'mb-1'].join(' ')} style={{direction: 'rtl', backgroundColor: '#f2f2f2'}}>
                             <p className={['col-2', 'm-0', 'p-1', 'pr-3', 'text-right'].join(' ')}>{counter + 1}</p>
                             <p className={['col-6', 'm-0', 'p-1', 'text-right'].join(' ')}>{discount.title}</p>
-                            <p className={['col-2', 'm-0', 'p-1', 'text-center'].join(' ')}>{getPersianDiscountType(discount.type)}</p> 
-                            <div className={['col-1', 'text-left'].join(' ')}><img src={discount.status === 1 ? powerOnImage : powerOffImage} onClick={() => {toggleDiscount(discount)}} className={['pointer'].join(' ')} style={{width: '24px'}}/></div>
+                            <p className={['col-2', 'm-0', 'p-1', 'text-center'].join(' ')}>{discount.type}</p> 
+                            <div className={['col-1', 'text-left'].join(' ')}><img src={discount.smartStatus === 1 ? powerOnImage : powerOffImage} className={['pointer'].join(' ')} style={{width: '24px'}}/></div>
                             <div className={['col-1', 'text-left'].join(' ')}><img src={settingsImage} onClick={() => {handleClickOpen(discount)}} className={['pointer'].join(' ')} style={{width: '24px'}}/></div>
                         </div>
                     );
@@ -275,8 +299,15 @@ function ListDiscount() {
                 </div>
             </div>
         </div>
-        <Dialog open={open} onClose={handleClose} TransitionComponent={Transition} fullScreen={false} maxWidth='lg' fullWidth={true} >
-            {selectedDiscount !== null ? <EditDiscount type={selectedDiscount.type} id={selectedDiscount.discountId} close={handleModalClose} /> : null}
+        <Dialog open={open} onClose={handleClose} TransitionComponent={Transition} fullScreen={true} maxWidth='lg' fullWidth={true} >
+            {selectedDiscount !== null ? (
+                selectedDiscount.typeId !== 5 ? 
+                    <EditDiscount type={selectedDiscount.typeId} id={selectedDiscount.discountId} close={handleModalClose} /> 
+                    : 
+                    <EditMultiDiscount stage={'secondEdit'} type={selectedDiscount.typeId} id={selectedDiscount.discountId} close={handleModalClose} />
+                ) 
+                : 
+                null}
         </Dialog>
         <Snackbar open={alertOpen} onClose={handleClose} onClick={handleClose} message="" autoHideDuration={1500} anchorOrigin={{ vertical, horizontal }}>
             <Alert severity={alertSeverity} icon={false}>{alertMessage}</Alert>
@@ -285,4 +316,17 @@ function ListDiscount() {
     );
 }
 
-export default ListDiscount;
+const mapStateToProps = (state) => {
+    return {
+        reduxLoading: state.loading,
+    };
+}
+
+const mapDispatchToProps = (dispatch) => {
+    return{
+        reduxStartLoading: () => dispatch({type: actionTypes.START_LOADING}),
+        reduxStopLoading: () => dispatch({type: actionTypes.STOP_LOADING}),
+    }
+}
+
+export default connect(mapStateToProps, mapDispatchToProps)(ListDiscount);

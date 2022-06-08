@@ -11,6 +11,8 @@ import axios from 'axios';
 import CircularProgress from '@material-ui/core/CircularProgress';
 import DiscountEdit from '../EditDiscount/DiscountEdit.js';
 import * as Constants from '../../../constants/urls';
+import EditMultiDiscount from '../EditMultiDiscount/EditMultiDiscount';
+import { useCookies } from 'react-cookie';
 
 const AddDiscount = () => {
 
@@ -24,12 +26,14 @@ const AddDiscount = () => {
     const [initialEditPageState, setInitialEdiPageState] = useState(null);
     const [displayClassState, setDisplayClassState] = useState('');
     const [selectedDiscountPrototypeId, setSelectedDiscountPrototypeId] = useState(-1);
+    const [cookies, setCookie, removeCookie] = useCookies();
 
     const discountTypesInformation = [
-        {id: 0, type: 'product', name: 'محصول', image: boxImage}, 
-        {id: 1, type: 'category', name: 'دسته‌بندی', image: categoryImage},
-        {id: 2, type: 'order', name: 'سبد خرید', image: cartImage}, 
-        {id: 3, type: 'shipping', name: 'حمل و نقل', image: truckImage}
+        {id: 0, type: 'product', typeId: 1, name: 'محصول', image: boxImage}, 
+        {id: 1, type: 'category', typeId: 2, name: 'دسته‌بندی', image: categoryImage},
+        {id: 2, type: 'shipping', typeId: 3, name: 'حمل و نقل', image: truckImage},
+        {id: 3, type: 'order', typeId: 4, name: 'سبد خرید', image: cartImage}, 
+        {id: 4, type: 'product-multi', typeId: 5, name: 'محصول ویژه', image: boxImage}
     ];
 
     const productClicked = () =>{
@@ -78,16 +82,28 @@ const AddDiscount = () => {
         if(selectedDiscountPrototypeId === -1){
             showWarningMessage('لطفا یکی از گزینه‌های زیر را انتخاب کنید');
         }else{
-            setLoading(<CircularProgress />);
-            axios.post(Constants.apiUrl + '/api/add-discount',{
-                type: discountTypesInformation[selectedDiscountPrototypeId].type
+            axios.post(Constants.apiUrl + '/api/discount/add-discount',{
+                typeId: discountTypesInformation[selectedDiscountPrototypeId].typeId
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + cookies.user_server_token,
+                }
             }).then((response) => {
                 if(response.data.status === 'done'){
-                    setLoading(null);
-                    setDisplayClassState('d-none');
-                    setInitialEdiPageState(<DiscountEdit type={discountTypesInformation[selectedDiscountPrototypeId].type} id={response.data.id} />);
-                }else{
-                    console.log(response.data.message);
+                    if(response.data.typeId !== 5){
+                        setDisplayClassState('d-none');
+                        setInitialEdiPageState(<DiscountEdit typeId={discountTypesInformation[selectedDiscountPrototypeId].typeId} id={response.data.id} />);
+                    }else{
+                        setDisplayClassState('d-none');
+                        setInitialEdiPageState(<EditMultiDiscount stage={'firstEdit'} id={response.data.id} />);
+                    }
+                }else if(response.data.status == 'failed'){
+                    if(response.data.status === 'm'){
+                        window.location.href = 'https://honari.com';
+                    }else{
+                        console.warn(response.data.message);
+                        alert(response.data.umessage);
+                    }
                 }
             }).catch((error) => {
                 console.log(error);
@@ -113,8 +129,7 @@ const AddDiscount = () => {
     return(
         <React.Fragment>
             <div className={['container-fluid', 'pt-3', 'pb-3', 'pr-2', 'pl-2', 'text-center', displayClassState].join(' ')} style={{borderRadius: '3px', backgroundColor: '#F2F2F2'}}>
-                <div style={{position: 'absolute', top: '5px', left: '20px', zIndex: '200'}}>{circularLoading}</div>
-                <div style={{position: 'absolute', top: '5px', right: '20px', zIndex: '200'}} onClick={hideWarningMessage}>{warningAlert}</div>
+                <div syle={{position: 'absolute', top: '5px', right: '20px', zIndex: '200'}} onClick={hideWarningMessage}>{warningAlert}</div>
                 <img src={newImage} style={{width: '50px'}} />
                 <h6 className={['mt-2'].join(' ')} >ایجاد تخفیف جدید</h6>
                 <div className={['row', 'justify-content-around'].join(' ')}>
@@ -135,6 +150,7 @@ const AddDiscount = () => {
             </div>
             {initialEditPageState}
         </React.Fragment>
+            
     );
 }
 

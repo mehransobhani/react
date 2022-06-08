@@ -14,6 +14,7 @@ import CategoryLimiter from './Limiter/CategoryLimiter.js';
 import Snackbar from '@material-ui/core/Snackbar';
 import MuiAlert from '@material-ui/lab/Alert';
 import * as Constants from '../../../constants/urls';
+import { useCookies } from 'react-cookie';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -57,6 +58,8 @@ const DiscountEdit = (props) => {
     const [alertOpen, setAlertOpen] = useState(false);
     const [alertSeverity, setAlertSeverity] = useState('success');
     const [alertMessage, setAlertMessage] = useState('');
+
+    const [cookies, setCookie, removeCookie] = useCookies();
 
     const vertical = 'bottom';
     const horizontal = 'left';
@@ -195,6 +198,10 @@ const DiscountEdit = (props) => {
                 joinable: joinableCheckboxState,
                 expirationDate: formExpirationDate,
                 status: statusState
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + cookies.user_server_token,
+                }
             }).then((response) => {
                 if(response.data.status === 'done'){
                     setAlertSeverity('success');
@@ -301,6 +308,10 @@ const DiscountEdit = (props) => {
     const getInitialData  = () => {
         axios.post(Constants.apiUrl + '/api/discount-information',{
             id: id
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((response) => {
             console.log(response.data);
             setTitleInputState(response.data.title);
@@ -548,7 +559,7 @@ const DiscountEdit = (props) => {
                     {
                         gapCheckboxState === 1 ? 
                         <div className={[].join(' ')}>
-                            <DatePicker className={['form-control'].join(' ')} style={{direction: 'rtl'}} timePicker={true} value={startDateInputState} onClickSubmitButton={value => {setStartDateInputState(value.value._d)}} />
+                            <DatePicker className={['form-control'].join(' ')} style={{direction: 'rtl'}} timePicker={true} value={startDateInputState} onClickSubmitButton={value => {alert(Math.ceil(value.value._d))}} />
                             <DatePicker className={['form-control'].join(' ')} style={{direction: 'rtl'}} timePicker={true} value={finishDateInputState} onClickSubmitButton={value => {setFinishDateInputState(value.value._d)}} />
                         </div>
                         : 

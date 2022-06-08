@@ -11,6 +11,7 @@ import axios from 'axios';
 import * as Constants from '../../../constants/urls';
 import { DatePicker } from "jalali-react-datepicker";
 import Pagination from '@material-ui/lab/Pagination';
+import { useCookies } from 'react-cookie';
 
 
 const ReportDiscount = () => {
@@ -27,6 +28,7 @@ const ReportDiscount = () => {
     const [usernameCheckboxIsChecked, setUsernameCheckboxIsChecked] = useState(false);
     const [startDateCheckboxIsChecked, setStartDateCheckboxIsChecked] = useState(false);
     const [finishDateCheckboxIsChecked, setFinishDateCheckboxIsChecked] = useState(false);
+    const [cookies, setCookie, removeCookie] = useCookies();
 
     const [reports, setReports] = useState([]);
     const [p, setP] = useState(1);
@@ -54,6 +56,10 @@ const ReportDiscount = () => {
             username: '0',
             startDate: 0,
             finishDate: 0,
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((res) => {
             let response = res.data;
             if(response.status === 'done'){
@@ -177,6 +183,10 @@ const ReportDiscount = () => {
             discountId: di, 
             startDate: sd,
             finishDate: fd
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((res) => {
             let response = res.data;
             if(response.status === 'done'){
@@ -233,7 +243,7 @@ const ReportDiscount = () => {
             {
                 reports.length !== 0
                 ?
-                (
+                (   
                     <div className={['row', 'py-1', 'mt-2'].join(' ')} style={{background: '#F2F2F2', borderRadius: '3px'}}>
                         <h6 className={['col-1', 'mb-0', 'text-right', 'font14'].join(' ')} style={{color: '#00BAC6'}}>ردیف</h6>
                         <h6 className={['col-1', 'mb-0', 'text-center', 'font14'].join(' ')} style={{color: '#00BAC6'}}>شماره تخفیف</h6>

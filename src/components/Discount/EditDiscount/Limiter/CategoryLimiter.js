@@ -6,6 +6,7 @@ import Autocomplete from '@material-ui/lab/Autocomplete';
 import CategoryBlackImage from '../../../../assets/images/category_black.png';
 import axios from 'axios';
 import * as Constants from '../../../../constants/urls';
+import { useCookies } from 'react-cookie';
 
 function Alert(props) {
     return <MuiAlert elevation={6} variant="filled" {...props} />;
@@ -22,6 +23,7 @@ const CategoryLimiter = (props) => {
     const [alertOpen, setAlertOpen] = useState(false);
     const [alertSeverity, setAlertSeverity] = useState('success');
     const [alertMessage, setAlertMessage] = useState('');
+    const [cookies, setCookie, removeCookie] = useCookies();
 
     const vertical = 'bottom';
     const horizontal = 'left';
@@ -38,6 +40,10 @@ const CategoryLimiter = (props) => {
                 discountId : props.discountId,
                 dependencyId: selectedCategory,
                 dependencyType: 'category'
+            }, {
+                headers: {
+                    'Authorization': 'Bearer ' + cookies.user_server_token,
+                }
             }).then((response) => {
                 console.log(response.data);
                 if(response.data.status === 'done'){
@@ -46,14 +52,18 @@ const CategoryLimiter = (props) => {
                     setSelectedCategories(categoriesArray);
                     setAlertSeverity('success');
                     setAlertMessage('عملیات با موفقیت انجام شد');
-                }else{
-                    setAlertSeverity('warning');
-                    if(response.data.message === 'dependency not found'){
-                        setAlertMessage('چنین دسته‌بندی یافت نشد');
-                    }else if(response.data.message === 'dependency exists'){
-                        setAlertMessage('این دسته‌بندی در لیست وجود دارد');
+                }else if(response.data.status === 'failed'){
+                    if(response.data.source === 'm'){
+                        window.location.href = 'https://honari.com';
+                    }{
+                        setAlertSeverity('warning');
+                        if(response.data.message === 'dependency not found'){
+                            setAlertMessage('چنین دسته‌بندی یافت نشد');
+                        }else if(response.data.message === 'dependency exists'){
+                            setAlertMessage('این دسته‌بندی در لیست وجود دارد');
+                        }
+                        console.log(response.data.umessage);
                     }
-                    console.log(response.data.message);
                 }
                 setAlertOpen(true);
                 setBtnTitle('افزودن');
@@ -77,6 +87,10 @@ const CategoryLimiter = (props) => {
         axios.post(Constants.apiUrl + '/api/discount-relevant-dependencies',{
             discountId: props.discountId,
             dependencyType: 'category'
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token, 
+            }
         }).then((response) => {
                 console.log(response.data);
                 if(response.data.status === 'done'){
@@ -94,9 +108,20 @@ const CategoryLimiter = (props) => {
         axios.post(Constants.apiUrl + '/api/search-discount-relevant-dependencies',{
             discountId: props.discountId,
             dependencyType: 'category'
+        }, {
+            headers: {
+                'Authorization': 'Bearer ' + cookies.user_server_token,
+            }
         }).then((response) => {
                 if(response.data.status === 'done'){
                     setCategories(response.data.categories);
+                }else if(response.data.status === 'failed'){
+                    if(response.data.source === 'm'){
+                        window.location.href = 'https://honari.com';
+                    }else{
+                        console.warn(response.data.message);
+                        alert(response.data.umessage);
+                    }
                 }
             }).catch((error) => {
                 console.log(error);
